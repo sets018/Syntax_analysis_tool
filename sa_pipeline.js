@@ -11,7 +11,7 @@ function print_grammar(grammar){
     for (const non_terminal in grammar){
         grammar[non_terminal].forEach(
             production => {
-                console.log(`${non_terminal} -> ${production}`)
+                console.log(`${non_terminal}->${production}`)
 
             }
         );
@@ -44,6 +44,19 @@ function read_grammar(lines){
 function detect_fix_left_recursion(productions) {
     // Stores productions needed to fix recursion for all non terminals
     const needed_productions = {};
+    const non_terminals = new Set(Object.keys(productions));
+
+    // Helper function to get the next available alphabetical letter
+    function get_new_non_terminal() {
+        for (let char = 65; char <= 90; char++) { // ASCII codes for A-Z
+            const new_non_terminal = String.fromCharCode(char);
+            if (!non_terminals.has(new_non_terminal)) {
+                non_terminals.add(new_non_terminal); // Mark as used
+                return new_non_terminal;
+            }
+        }
+            throw new Error("Ran out of single-character non-terminals");
+    }
     // Detects and removes all left recursion from each of the productions
     for (const non_terminal in productions) {
         const recursive_productions = [];
@@ -66,7 +79,7 @@ function detect_fix_left_recursion(productions) {
 
         if (recursive_productions.length > 0){
             // A'
-            new_non_terminal = `${non_terminal}'`
+            const new_non_terminal = get_new_non_terminal();
             // Productions needed to fix recursion for a given non temrinal A
             needed_productions[non_terminal] = [];
             // Productions needed to fix recursion for a new non temrinal A´
@@ -143,55 +156,23 @@ function get_nexts(target_non_terminal, productions, firsts, non_terminals, visi
         // Return -1 if target is not in the string
         if (index === -1) return -1;
 
-        // Handle if `target` is followed by a prime symbol (apostrophe)
-        const found = (str[index + 1] === "'");
-        if (found) {
-            index = str.indexOf(target, index + 2);
-            if (index === -1) return -1;
-        }
-
         // Check if target is the last character
         if (index === str.length - 1) return '&';
 
-        // Check the character next to the target
-        const next = str[index + 1];
-
-        // If next character is an uppercase letter followed by an apostrophe, retrieve both
-        return /[A-Z]/.test(next) && str[index + 2] === "'" ? next + "'" : next;
-    }
-
-    function find_next_char_prime(target, str) {
-        const index = str.indexOf(target);
-        const found = ((index !== -1) && (str[index + 1] === "'"));
-
-        // Return -1 if target is not found
-        if (!found) return -1;
-
-        // Check if target is the last character
-        if (index + 1 === str.length - 1) return '&';
-
-        // Check the character next to the target
-        const next = str[index + 2];
-        return /[A-Z]/.test(next) && str[index + 3] === "'" ? next + "'" : next;
+        // Return the next character in the production
+        return str[index + 1];
     }
 
     function produces_epsilon(production, firsts) {
         for (let i = 0; i < production.length; i++) {
             const symbol = production[i];
-            // Handle multi-character non-terminals like "E'" if they exist
-            const fullSymbol = (production[i + 1] === "'") ? symbol + "'" : symbol;
     
-            if (firsts[fullSymbol]) {
-                if (!firsts[fullSymbol].includes('&')) {
+            if (firsts[symbol]) {
+                if (!firsts[symbol].includes('&')) {
                     return false; // If any symbol in `production` cannot produce ε, stop and return false
                 }
             } else {
                 return false; // If the symbol is not in `firsts`, it cannot produce ε
-            }
-    
-            // Skip the next character if it was part of a multi-character symbol (e.g., "E'")
-            if (fullSymbol.length > 1) {
-                i++;
             }
         }
         return true; // All symbols in `production` can produce ε
@@ -203,9 +184,7 @@ function get_nexts(target_non_terminal, productions, firsts, non_terminals, visi
     // Iterate over each non-terminal and its productions
     for (const non_terminal of non_terminals) {
         productions[non_terminal].forEach(production => {
-            const next = target_non_terminal.length === 1
-                ? find_next_char(target_non_terminal, production)
-                : find_next_char_prime(target_non_terminal, production);
+            const next = find_next_char(target_non_terminal, production);
 
             if (next !== -1) {
                 if (!non_terminals.includes(next)) {
@@ -260,7 +239,7 @@ function get_nexts_all_non_terminals(productions, firsts){
 
 
 
-const lines = read_file("/workspaces/Compilers-Lab-PHP/syntax_analysis/grammar.txt");
+const lines = read_file("/workspaces/Syntax_analysis_tool/grammar.txt");
 const grammar = read_grammar(lines);
 console.log("Grammar input"); 
 print_grammar(grammar);
