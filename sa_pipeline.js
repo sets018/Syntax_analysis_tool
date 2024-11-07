@@ -237,6 +237,23 @@ function get_nexts_all_non_terminals(productions, firsts){
 }
 
 function build_m_table(productions, firsts, nexts) {
+
+    function get_first_alpha(non_terminal, production, firsts){
+        const firsts_alpha = new Set();
+        for (const char of production) {
+            if (/[a-z()+*]/.test(char)) {  // Terminal symbol
+                firsts_alpha.add(char);
+                break;
+            }
+            else if (char in firsts){ // first is non terminal 
+                firsts[char].forEach(symbol => {
+                    if (item !== '&') result.add(symbol);
+                });
+            }
+            
+        }
+    }
+
     const m_table = {};
     const rows = Object.keys(productions);
 
@@ -269,7 +286,7 @@ function build_m_table(productions, firsts, nexts) {
 
         right_productions.forEach(production => {
             // Calculate FIRST(α)
-            const first_alpha = get_first_alpha(production, firsts);
+            const first_alpha = get_first_alpha(non_terminal, production, firsts);
 
             // Step 2: For each terminal a in FIRST(α), add A → α to M[A][a]
             first_alpha.forEach(terminal => {
