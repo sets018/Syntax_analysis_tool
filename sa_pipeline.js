@@ -236,7 +236,58 @@ function get_nexts_all_non_terminals(productions, firsts){
     return nexts_all_non_terminals 
 }
 
+function build_m_table(productions, firsts, nexts) {
+    const m_table = {};
+    const rows = Object.keys(productions);
 
+    const all_productions_right = Object.values(productions).flat();
+    // Filter out single capital letters in each string
+    const columns = [];
+
+    all_productions_right.forEach(str => {
+        for (const char of str) {
+            // Check if character is not a single uppercase letter and is not "&"
+            if (!(char >= 'A' && char <= 'Z') && char !== '&') {
+                columns.push(char);
+            }
+        }
+    });
+    columns.push('$');  
+    // Initialize M table
+    for (const non_terminal in rows) {
+        m_table[rows[non_terminal]] = {};
+        for (const terminal in columns) {
+            m_table[rows[non_terminal]][columns[terminal]] = {};
+            
+        }
+    }
+
+    console.log(m_table);
+
+    for (const non_terminal in productions) {
+        const right_productions = productions[non_terminal];
+
+        right_productions.forEach(production => {
+            // Calculate FIRST(α)
+            const first_alpha = get_first_alpha(production, firsts);
+
+            // Step 2: For each terminal a in FIRST(α), add A → α to M[A][a]
+            first_alpha.forEach(terminal => {
+                if (terminal !== '&') {  // Only add if terminal is not epsilon
+                    m_table[non_terminal][terminal] = `${non_terminal}→${production}`;
+                }
+            });
+
+            // Step 3: If ε is in FIRST(α), add A → α to M[A][b] for each b in FOLLOW(A)
+            if (first_alpha.has('&')) {
+                nexts[non_terminal].forEach(next => {
+                    m_table[non_terminal][next] = `${non_terminal}→${production}`;
+                });
+            }
+    });
+    console.log(m_table)
+}
+}
 
 
 const lines = read_file("/workspaces/Syntax_analysis_tool/grammar.txt");
@@ -254,3 +305,4 @@ console.log(all_firsts)
 console.log("Nexts of each non-terminal");
 all_nexts =  get_nexts_all_non_terminals(non_recursive, all_firsts)
 console.log(all_nexts);
+build_m_table(non_recursive, all_firsts, all_nexts)
