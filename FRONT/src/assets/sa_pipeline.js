@@ -3,7 +3,7 @@ export function print_grammar(grammar) {
     for (const non_terminal in grammar) {
         grammar[non_terminal].forEach(
             production => {
-                console.log(`${non_terminal} -> ${production}`);
+                console.log(`${non_terminal}->${production}`);
             }
         );
     }
@@ -28,6 +28,19 @@ export function read_grammar(lines) {
 function detect_fix_left_recursion(productions) {
     // Stores productions needed to fix recursion for all non terminals
     const needed_productions = {};
+    const non_terminals = new Set(Object.keys(productions));
+
+    // Helper function to get the next available alphabetical letter
+    function get_new_non_terminal() {
+        for (let char = 65; char <= 90; char++) { // ASCII codes for A-Z
+            const new_non_terminal = String.fromCharCode(char);
+            if (!non_terminals.has(new_non_terminal)) {
+                non_terminals.add(new_non_terminal); // Mark as used
+                return new_non_terminal;
+            }
+        }
+            throw new Error("Ran out of single-character non-terminals");
+    }
     // Detects and removes all left recursion from each of the productions
     for (const non_terminal in productions) {
         const recursive_productions = [];
@@ -50,7 +63,7 @@ function detect_fix_left_recursion(productions) {
 
         if (recursive_productions.length > 0){
             // A'
-            new_non_terminal = `${non_terminal}'`
+            const new_non_terminal = get_new_non_terminal();
             // Productions needed to fix recursion for a given non temrinal A
             needed_productions[non_terminal] = [];
             // Productions needed to fix recursion for a new non temrinal A´
@@ -127,55 +140,23 @@ function get_nexts(target_non_terminal, productions, firsts, non_terminals, visi
         // Return -1 if target is not in the string
         if (index === -1) return -1;
 
-        // Handle if `target` is followed by a prime symbol (apostrophe)
-        const found = (str[index + 1] === "'");
-        if (found) {
-            index = str.indexOf(target, index + 2);
-            if (index === -1) return -1;
-        }
-
         // Check if target is the last character
         if (index === str.length - 1) return '&';
 
-        // Check the character next to the target
-        const next = str[index + 1];
-
-        // If next character is an uppercase letter followed by an apostrophe, retrieve both
-        return /[A-Z]/.test(next) && str[index + 2] === "'" ? next + "'" : next;
-    }
-
-    function find_next_char_prime(target, str) {
-        const index = str.indexOf(target);
-        const found = ((index !== -1) && (str[index + 1] === "'"));
-
-        // Return -1 if target is not found
-        if (!found) return -1;
-
-        // Check if target is the last character
-        if (index + 1 === str.length - 1) return '&';
-
-        // Check the character next to the target
-        const next = str[index + 2];
-        return /[A-Z]/.test(next) && str[index + 3] === "'" ? next + "'" : next;
+        // Return the next character in the production
+        return str[index + 1];
     }
 
     function produces_epsilon(production, firsts) {
         for (let i = 0; i < production.length; i++) {
             const symbol = production[i];
-            // Handle multi-character non-terminals like "E'" if they exist
-            const fullSymbol = (production[i + 1] === "'") ? symbol + "'" : symbol;
     
-            if (firsts[fullSymbol]) {
-                if (!firsts[fullSymbol].includes('&')) {
+            if (firsts[symbol]) {
+                if (!firsts[symbol].includes('&')) {
                     return false; // If any symbol in `production` cannot produce ε, stop and return false
                 }
             } else {
                 return false; // If the symbol is not in `firsts`, it cannot produce ε
-            }
-    
-            // Skip the next character if it was part of a multi-character symbol (e.g., "E'")
-            if (fullSymbol.length > 1) {
-                i++;
             }
         }
         return true; // All symbols in `production` can produce ε
@@ -187,9 +168,7 @@ function get_nexts(target_non_terminal, productions, firsts, non_terminals, visi
     // Iterate over each non-terminal and its productions
     for (const non_terminal of non_terminals) {
         productions[non_terminal].forEach(production => {
-            const next = target_non_terminal.length === 1
-                ? find_next_char(target_non_terminal, production)
-                : find_next_char_prime(target_non_terminal, production);
+            const next = find_next_char(target_non_terminal, production);
 
             if (next !== -1) {
                 if (!non_terminals.includes(next)) {
@@ -241,3 +220,121 @@ function get_nexts_all_non_terminals(productions, firsts){
     return nexts_all_non_terminals 
 }
 
+function build_m_table(productions, nexts) {
+    function get_firsts_alpha(production, productions, non_terminals) {
+        function get_firsts(non_terminal, productions, non_terminals){
+            const firsts = [];
+            // for each of the productions of a given non terminal
+            productions[non_terminal].forEach(
+                production => {
+                    const first = production[0];
+                    if (non_terminals.includes(first)){
+                        const nested_firsts = get_firsts(first, productions, non_terminals);
+                        firsts.push(...nested_firsts);
+                    }
+                    else{
+                        firsts.push(first);
+                    }
+    
+                }
+                    
+            );
+            return firsts
+    }
+        const firsts = [];
+        let allEpsilon = true; // Track if all symbols in the production can be epsilon
+    
+        for (const symbol of production) {
+            if (!non_terminals.includes(symbol)) {
+                // If symbol is a terminal, add it to firsts and stop
+                firsts.push(symbol);
+                allEpsilon = false; // Found a terminal, so not all can be epsilon
+                break;
+            } else {
+                // If symbol is a non-terminal, get its FIRST set
+                const nested_firsts = get_firsts(symbol, productions, non_terminals);
+                firsts.push(...nested_firsts.filter(x => x !== "ε")); // Add non-epsilon firsts
+    
+                // If epsilon is not in the FIRST set of the symbol, stop the loop
+                if (!nested_firsts.includes("ε")) {
+                    allEpsilon = false;
+                    break;
+                }
+            }
+        }
+        
+        // If all symbols in the production can lead to epsilon, add epsilon
+        if (allEpsilon) {
+            firsts.push("ε");
+        }
+    
+        return firsts;
+    }
+
+    const m_table = {};
+    const rows = Object.keys(productions);
+
+    const all_productions_right = Object.values(productions).flat();
+    // Filter out single capital letters in each string
+    const columns = [];
+
+    all_productions_right.forEach(str => {
+        for (const char of str) {
+            // Check if character is not a single uppercase letter and is not "&"
+            if (!(char >= 'A' && char <= 'Z') && char !== '&') {
+                columns.push(char);
+            }
+        }
+    });
+    columns.push('$');  
+    // Initialize M table
+    for (const non_terminal in rows) {
+        m_table[rows[non_terminal]] = {};
+        for (const terminal in columns) {
+            m_table[rows[non_terminal]][columns[terminal]] = {};    
+        }
+    }
+
+    for (const non_terminal in productions) {
+        const right_productions = productions[non_terminal];
+
+        right_productions.forEach(production => {
+            // Calculate FIRST(α)
+            const first_alpha = get_firsts_alpha(production, productions, rows);
+
+            // Step 2: For each terminal a in FIRST(α), add A → α to M[A][a]
+            first_alpha.forEach(terminal => {
+                if (terminal !== '&') {  // Only add if terminal is not epsilon
+                    m_table[non_terminal][terminal] = `${non_terminal}→${production}`;
+                }
+            });
+
+            // Step 3: If ε is in FIRST(α), add A → α to M[A][b] for each b in FOLLOW(A)
+            if (first_alpha.includes('&')) {
+                nexts[non_terminal].forEach(next => {
+                    m_table[non_terminal][next] = `${non_terminal}→${production}`;
+                });
+            }
+    });
+}
+    return m_table
+}
+
+const lines = read_file("/workspaces/Syntax_analysis_tool/grammar.txt");
+const grammar = read_grammar(lines);
+console.log("Grammar input"); 
+print_grammar(grammar);
+console.log("Non left-recursive grammar"); 
+non_recursive = detect_fix_left_recursion(grammar);
+print_grammar(non_recursive);
+console.log("Non left-recursive, left-factored grammar");
+print_grammar(non_recursive);
+console.log("Firsts of each non-terminal");
+all_firsts = get_firsts_all_non_terminals(non_recursive);
+console.log(all_firsts)
+console.log("Nexts of each non-terminal");
+all_nexts =  get_nexts_all_non_terminals(non_recursive, all_firsts)
+console.log(all_nexts);
+//m_table = get_firsts_alpha("T*F", non_recursive, Object.keys(non_recursive))
+m_table = build_m_table(non_recursive, all_nexts)
+console.log(m_table);
