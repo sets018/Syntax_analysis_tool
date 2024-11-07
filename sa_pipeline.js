@@ -236,22 +236,55 @@ function get_nexts_all_non_terminals(productions, firsts){
     return nexts_all_non_terminals 
 }
 
-function build_m_table(productions, firsts, nexts) {
-
-    function get_first_alpha(non_terminal, production, firsts){
-        const firsts_alpha = new Set();
-        for (const char of production) {
-            if (/[a-z()+*]/.test(char)) {  // Terminal symbol
-                firsts_alpha.add(char);
+function build_m_table(productions, nexts) {
+    function get_firsts_alpha(production, productions, non_terminals) {
+        function get_firsts(non_terminal, productions, non_terminals){
+            const firsts = [];
+            // for each of the productions of a given non terminal
+            productions[non_terminal].forEach(
+                production => {
+                    const first = production[0];
+                    if (non_terminals.includes(first)){
+                        const nested_firsts = get_firsts(first, productions, non_terminals);
+                        firsts.push(...nested_firsts);
+                    }
+                    else{
+                        firsts.push(first);
+                    }
+    
+                }
+                    
+            );
+            return firsts
+    }
+        const firsts = [];
+        let allEpsilon = true; // Track if all symbols in the production can be epsilon
+    
+        for (const symbol of production) {
+            if (!non_terminals.includes(symbol)) {
+                // If symbol is a terminal, add it to firsts and stop
+                firsts.push(symbol);
+                allEpsilon = false; // Found a terminal, so not all can be epsilon
                 break;
+            } else {
+                // If symbol is a non-terminal, get its FIRST set
+                const nested_firsts = get_firsts(symbol, productions, non_terminals);
+                firsts.push(...nested_firsts.filter(x => x !== "ε")); // Add non-epsilon firsts
+    
+                // If epsilon is not in the FIRST set of the symbol, stop the loop
+                if (!nested_firsts.includes("ε")) {
+                    allEpsilon = false;
+                    break;
+                }
             }
-            else if (char in firsts){ // first is non terminal 
-                firsts[char].forEach(symbol => {
-                    if (item !== '&') result.add(symbol);
-                });
-            }
-            
         }
+        
+        // If all symbols in the production can lead to epsilon, add epsilon
+        if (allEpsilon) {
+            firsts.push("ε");
+        }
+    
+        return firsts;
     }
 
     const m_table = {};
@@ -274,19 +307,16 @@ function build_m_table(productions, firsts, nexts) {
     for (const non_terminal in rows) {
         m_table[rows[non_terminal]] = {};
         for (const terminal in columns) {
-            m_table[rows[non_terminal]][columns[terminal]] = {};
-            
+            m_table[rows[non_terminal]][columns[terminal]] = {};    
         }
     }
-
-    console.log(m_table);
 
     for (const non_terminal in productions) {
         const right_productions = productions[non_terminal];
 
         right_productions.forEach(production => {
             // Calculate FIRST(α)
-            const first_alpha = get_first_alpha(non_terminal, production, firsts);
+            const first_alpha = get_firsts_alpha(production, productions, rows);
 
             // Step 2: For each terminal a in FIRST(α), add A → α to M[A][a]
             first_alpha.forEach(terminal => {
@@ -296,16 +326,15 @@ function build_m_table(productions, firsts, nexts) {
             });
 
             // Step 3: If ε is in FIRST(α), add A → α to M[A][b] for each b in FOLLOW(A)
-            if (first_alpha.has('&')) {
+            if (first_alpha.includes('&')) {
                 nexts[non_terminal].forEach(next => {
                     m_table[non_terminal][next] = `${non_terminal}→${production}`;
                 });
             }
     });
-    console.log(m_table)
 }
+    return m_table
 }
-
 
 const lines = read_file("/workspaces/Syntax_analysis_tool/grammar.txt");
 const grammar = read_grammar(lines);
@@ -322,4 +351,6 @@ console.log(all_firsts)
 console.log("Nexts of each non-terminal");
 all_nexts =  get_nexts_all_non_terminals(non_recursive, all_firsts)
 console.log(all_nexts);
-build_m_table(non_recursive, all_firsts, all_nexts)
+//m_table = get_firsts_alpha("T*F", non_recursive, Object.keys(non_recursive))
+m_table = build_m_table(non_recursive, all_nexts)
+console.log(m_table);
