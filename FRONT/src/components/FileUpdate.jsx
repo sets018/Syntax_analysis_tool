@@ -10,6 +10,8 @@ function FileUpload({ onFileContent }) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const content = e.target.result;
+        
+        console.log('Raw file content:', content); // Log raw content for debugging
         onFileContent(content.split('\n')); // Pass the content as an array of lines
       };
       reader.readAsText(file);
