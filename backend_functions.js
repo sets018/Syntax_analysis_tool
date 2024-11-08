@@ -1,30 +1,46 @@
+const { log } = require('console');
+const fs = require('fs');
 
-export function print_grammar(grammar) {
-    for (const non_terminal in grammar) {
+function read_file(path) {
+  const content = fs.readFileSync(path, 'utf-8');
+  const lines = content.split('\n'); // Splitting the file by new lines
+  return lines;
+}
+
+function print_grammar(grammar){
+    for (const non_terminal in grammar){
         grammar[non_terminal].forEach(
             production => {
-                console.log(`${non_terminal}->${production}`);
+                console.log(`${non_terminal}->${production}`)
+
             }
         );
     }
 }
 
-export function read_grammar(lines) {
+function read_grammar(lines){
     const productions = {};
-    // Saves all the productions in an object where the key is the non-terminal (head of the production)
-    // and the value is a list with the bodies of the productions.
-    lines.forEach(line => {
-        const production = line.trim();
-        if (production === '') return;
+    // Saves all the productions on a dict where the key is the non terminal (head of the production) and the value is a list with the bodys of the productions
+    lines.forEach(
+        line => {
+            const production = line.trim();
 
-        const [head, body] = production.split('->').map(s => s.trim());
-        if (!productions[head]) {
-            productions[head] = [];
+            if (production === '') {
+                return;
+            }
+
+            const [head, body] = production.split('->').map(s => s.trim());
+
+            if (!productions[head]){
+                productions[head] = [];
+            }
+                productions[head].push(body);
+
         }
-        productions[head].push(body);
-    });
-    return productions;
+    );
+    return productions  
 }
+
 function detect_fix_left_recursion_and_left_factoring(productions) {
     const needed_productions = {};
     const non_terminals = new Set(Object.keys(productions));
@@ -348,6 +364,7 @@ console.log("Grammar input");
 print_grammar(grammar);
 console.log("Non left-recursive, left-factored grammar"); 
 non_recursive = detect_fix_left_recursion_and_left_factoring(grammar);
+print_grammar(non_recursive);
 console.log("Firsts of each non-terminal");
 all_firsts = get_firsts_all_non_terminals(non_recursive);
 console.log(all_firsts)
