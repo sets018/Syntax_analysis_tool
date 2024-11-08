@@ -165,89 +165,88 @@ function get_firsts_all_non_terminals(productions){
     return firsts_all_non_terminals 
 }
 
-function get_nexts(target_non_terminal, productions, firsts, non_terminals, visited = new Set()) {
-    // Check if the non-terminal is already being processed in this recursive chain
-    if (visited.has(target_non_terminal)) return []; // Prevent infinite recursion
-
-    // Add the current non-terminal to the visited set
-    visited.add(target_non_terminal);
-
-    function find_next_char(target, str) {
-        let index = str.indexOf(target);
-
-        // Return -1 if target is not in the string
-        if (index === -1) return -1;
-
-        // Check if target is the last character
-        if (index === str.length - 1) return '&';
-
-        // Return the next character in the production
-        return str[index + 1];
-    }
-
-    function produces_epsilon(production, firsts) {
-        for (let i = 0; i < production.length; i++) {
-            const symbol = production[i];
+function get_nexts_all_non_terminals(productions, firsts){
+    function get_nexts(target_non_terminal, productions, firsts, non_terminals, visited = new Set()) {
+        // Check if the non-terminal is already being processed in this recursive chain
+        if (visited.has(target_non_terminal)) return []; // Prevent infinite recursion
     
-            if (firsts[symbol]) {
-                if (!firsts[symbol].includes('&')) {
-                    return false; // If any symbol in `production` cannot produce ε, stop and return false
-                }
-            } else {
-                return false; // If the symbol is not in `firsts`, it cannot produce ε
-            }
+        // Add the current non-terminal to the visited set
+        visited.add(target_non_terminal);
+    
+        function find_next_char(target, str) {
+            let index = str.indexOf(target);
+    
+            // Return -1 if target is not in the string
+            if (index === -1) return -1;
+    
+            // Check if target is the last character
+            if (index === str.length - 1) return '&';
+    
+            // Return the next character in the production
+            return str[index + 1];
         }
-        return true; // All symbols in `production` can produce ε
-    }
-
-    const nexts = [];
-    if (target_non_terminal === non_terminals[0]) nexts.push('$'); // Start symbol has `$` in FOLLOW
-
-    // Iterate over each non-terminal and its productions
-    for (const non_terminal of non_terminals) {
-        productions[non_terminal].forEach(production => {
-            const next = find_next_char(target_non_terminal, production);
-
-            if (next !== -1) {
-                if (!non_terminals.includes(next)) {
-                    // If `next` is a terminal and not ε, add it to `nexts`
-                    if (next !== '&') {
-                        nexts.push(next);
-                    } else if (next === '&') {
-                        // Handle `&` case: inherit `FOLLOW(non_terminal)` into `nexts`
-                        const nested_nexts = get_nexts(non_terminal, productions, firsts, non_terminals, visited);
-                        nexts.push(...nested_nexts);
+    
+        function produces_epsilon(production, firsts) {
+            for (let i = 0; i < production.length; i++) {
+                const symbol = production[i];
+        
+                if (firsts[symbol]) {
+                    if (!firsts[symbol].includes('&')) {
+                        return false; // If any symbol in `production` cannot produce ε, stop and return false
                     }
                 } else {
-                    // `next` is a non-terminal
-                    const firsts_next = firsts[next];
-                    if (firsts_next.includes('&')) {
-                        // If `next` has ε in its FIRST set, add other symbols
-                        const firsts_next_non_epsilon = firsts_next.filter(item => item !== '&');
-                        nexts.push(...firsts_next_non_epsilon);
-
-                        const remaining_production = production.slice(production.indexOf(target_non_terminal) + target_non_terminal.length).trim();
-                        if (produces_epsilon(remaining_production, firsts)) {
-                            // Inherit FOLLOW set of `non_terminal` recursively
+                    return false; // If the symbol is not in `firsts`, it cannot produce ε
+                }
+            }
+            return true; // All symbols in `production` can produce ε
+        }
+    
+        const nexts = [];
+        if (target_non_terminal === non_terminals[0]) nexts.push('$'); // Start symbol has `$` in FOLLOW
+    
+        // Iterate over each non-terminal and its productions
+        for (const non_terminal of non_terminals) {
+            productions[non_terminal].forEach(production => {
+                const next = find_next_char(target_non_terminal, production);
+    
+                if (next !== -1) {
+                    if (!non_terminals.includes(next)) {
+                        // If `next` is a terminal and not ε, add it to `nexts`
+                        if (next !== '&') {
+                            nexts.push(next);
+                        } else if (next === '&') {
+                            // Handle `&` case: inherit `FOLLOW(non_terminal)` into `nexts`
                             const nested_nexts = get_nexts(non_terminal, productions, firsts, non_terminals, visited);
                             nexts.push(...nested_nexts);
                         }
                     } else {
-                        nexts.push(...firsts_next);
+                        // `next` is a non-terminal
+                        const firsts_next = firsts[next];
+                        if (firsts_next.includes('&')) {
+                            // If `next` has ε in its FIRST set, add other symbols
+                            const firsts_next_non_epsilon = firsts_next.filter(item => item !== '&');
+                            nexts.push(...firsts_next_non_epsilon);
+    
+                            const remaining_production = production.slice(production.indexOf(target_non_terminal) + target_non_terminal.length).trim();
+                            if (produces_epsilon(remaining_production, firsts)) {
+                                // Inherit FOLLOW set of `non_terminal` recursively
+                                const nested_nexts = get_nexts(non_terminal, productions, firsts, non_terminals, visited);
+                                nexts.push(...nested_nexts);
+                            }
+                        } else {
+                            nexts.push(...firsts_next);
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
+    
+        // Remove the current non-terminal from visited before returning
+        visited.delete(target_non_terminal);
+    
+        // Return unique items in the `nexts` array
+        return [...new Set(nexts)];
     }
-
-    // Remove the current non-terminal from visited before returning
-    visited.delete(target_non_terminal);
-
-    // Return unique items in the `nexts` array
-    return [...new Set(nexts)];
-}
-
-function get_nexts_all_non_terminals(productions, firsts){
     const nexts_all_non_terminals = {};
     const non_terminals = Object.keys(productions);
     non_terminals.forEach(
