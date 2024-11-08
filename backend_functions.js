@@ -136,25 +136,49 @@ function detect_fix_left_recursion_and_left_factoring(productions) {
 }
 
 function get_firsts_all_non_terminals(productions){
-    function get_firsts(non_terminal, productions, non_terminals){
-        const firsts = [];
-        // for each of the productions of a given non terminal
-        productions[non_terminal].forEach(
-            production => {
-                const first = production[0];
-                if (non_terminals.includes(first)){
-                    const nested_firsts = get_firsts(first, productions, non_terminals);
-                    firsts.push(...nested_firsts);
+    function get_firsts(non_terminal, productions, non_terminals, memo = {}) {
+        // Check if FIRST set is already computed
+        if (memo[non_terminal]) return memo[non_terminal];
+        
+        const firsts = new Set();  // Use a set to avoid duplicate entries
+        productions[non_terminal].forEach(production => {
+            let allEpsilon = true; // Track if all symbols in the production can be epsilon
+    
+            for (let i = 0; i < production.length; i++) {
+                const symbol = production[i];
+    
+                if (!non_terminals.includes(symbol)) {
+                    // Rule 1: If symbol is a terminal, add it to FIRST and break
+                    firsts.add(symbol);
+                    allEpsilon = false;
+                    break;
+                } else {
+                    // Rule 3: Symbol is a non-terminal; recursively get its FIRST set
+                    const nestedFirsts = get_firsts(symbol, productions, non_terminals, memo);
+    
+                    // Add all non-epsilon symbols from the nested FIRST set
+                    nestedFirsts.forEach(item => {
+                        if (item !== "&") firsts.add(item);
+                    });
+    
+                    // Check if epsilon is in the FIRST set of the current symbol
+                    if (!nestedFirsts.includes("&")) {
+                        allEpsilon = false;
+                        break;
+                    }
                 }
-                else{
-                    firsts.push(first);
-                }
-
             }
-                
-        );
-        return firsts
-}
+    
+            // Rule 2: If all symbols in the production can produce epsilon, add epsilon
+            if (allEpsilon) {
+                firsts.add("&");
+            }
+        });
+    
+        // Memoize and return the FIRST set
+        memo[non_terminal] = firsts;
+        return [...firsts];
+    }
     const firsts_all_non_terminals = {};
     const non_terminals = Object.keys(productions);
     non_terminals.forEach(
@@ -258,80 +282,88 @@ function get_nexts_all_non_terminals(productions, firsts){
 }
 
 function build_m_table(productions, nexts) {
-    function get_firsts_alpha(production, productions, non_terminals) {
-        function get_firsts(non_terminal, productions, non_terminals){
-            const firsts = [];
-            // for each of the productions of a given non terminal
-            productions[non_terminal].forEach(
-                production => {
-                    const first = production[0];
-                    if (non_terminals.includes(first)){
-                        const nested_firsts = get_firsts(first, productions, non_terminals);
-                        firsts.push(...nested_firsts);
-                    }
-                    else{
-                        firsts.push(first);
-                    }
-    
-                }
-                    
-            );
-            return firsts
-    }
-        const firsts = [];
-        let allEpsilon = true; // Track if all symbols in the production can be epsilon
-    
-        for (const symbol of production) {
-            if (!non_terminals.includes(symbol)) {
-                // If symbol is a terminal, add it to firsts and stop
-                firsts.push(symbol);
-                allEpsilon = false; // Found a terminal, so not all can be epsilon
-                break;
-            } else {
-                // If symbol is a non-terminal, get its FIRST set
-                const nested_firsts = get_firsts(symbol, productions, non_terminals);
-                firsts.push(...nested_firsts.filter(x => x !== "ε")); // Add non-epsilon firsts
-    
-                // If epsilon is not in the FIRST set of the symbol, stop the loop
-                if (!nested_firsts.includes("ε")) {
-                    allEpsilon = false;
-                    break;
-                }
-            }
-        }
-        
-        // If all symbols in the production can lead to epsilon, add epsilon
-        if (allEpsilon) {
-            firsts.push("ε");
-        }
-    
-        return firsts;
-    }
-
+    // Memoization cache for FIRST sets
+    const memoizedFirstSets = {};
     const m_table = {};
     const rows = Object.keys(productions);
 
+    // Dynamically determine the set of terminal symbols
     const all_productions_right = Object.values(productions).flat();
-    // Filter out single capital letters in each string
     const columns = [];
 
     all_productions_right.forEach(str => {
         for (const char of str) {
-            // Check if character is not a single uppercase letter and is not "&"
+            // Collect characters that are not uppercase non-terminals or epsilon (&)
             if (!(char >= 'A' && char <= 'Z') && char !== '&') {
                 columns.push(char);
             }
         }
     });
-    columns.push('$');  
-    // Initialize M table
-    for (const non_terminal in rows) {
-        m_table[rows[non_terminal]] = {};
-        for (const terminal in columns) {
-            m_table[rows[non_terminal]][columns[terminal]] = {};    
+    columns.push('$');  // Add end-of-input symbol to columns
+
+    // Initialize M table with "error"
+    for (const non_terminal of rows) {
+        m_table[non_terminal] = {};
+        for (const terminal of columns) {
+            m_table[non_terminal][terminal] = "error";  // Initialize as error
         }
     }
 
+    // Function to retrieve the FIRST set for a given non-terminal, with memoization
+    function get_firsts(non_terminal, productions, non_terminals) {
+        if (memoizedFirstSets[non_terminal]) {
+            return memoizedFirstSets[non_terminal];
+        }
+        const firsts = [];
+
+        // Iterate over productions for the given non-terminal
+        productions[non_terminal].forEach(production => {
+            const firstSymbol = production[0];
+            if (non_terminals.includes(firstSymbol)) {
+                const nestedFirsts = get_firsts(firstSymbol, productions, non_terminals);
+                firsts.push(...nestedFirsts);
+            } else {
+                firsts.push(firstSymbol);
+            }
+        });
+
+        memoizedFirstSets[non_terminal] = firsts;
+        return firsts;
+    }
+
+    // Function to calculate the FIRST set for a specific production
+    function get_firsts_alpha(production, productions, non_terminals) {
+        const firsts = [];
+        let allEpsilon = true;
+
+        for (const symbol of production) {
+            if (!non_terminals.includes(symbol)) {
+                // If the symbol is a terminal, add it to FIRST set and stop
+                firsts.push(symbol);
+                allEpsilon = false;
+                break;
+            } else {
+                // If the symbol is a non-terminal, get its FIRST set
+                const nested_firsts = get_firsts(symbol, productions, non_terminals);
+                firsts.push(...nested_firsts.filter(x => x !== "&"));  // Add non-epsilon firsts
+
+                // If epsilon is not in the FIRST set, stop processing
+                if (!nested_firsts.includes("&")) {
+                    allEpsilon = false;
+                    break;
+                }
+            }
+        }
+
+        // If all symbols in the production can lead to epsilon, add epsilon
+        if (allEpsilon) {
+            firsts.push("&");
+        }
+
+        return firsts;
+    }
+
+    // Construct the M table based on productions
     for (const non_terminal in productions) {
         const right_productions = productions[non_terminal];
 
@@ -352,9 +384,10 @@ function build_m_table(productions, nexts) {
                     m_table[non_terminal][next] = `${non_terminal}→${production}`;
                 });
             }
-    });
-}
-    return m_table
+        });
+    }
+
+    return m_table;
 }
 
 const lines = read_file("/workspaces/Syntax_analysis_tool/grammar.txt");
