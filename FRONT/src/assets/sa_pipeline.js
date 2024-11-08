@@ -9,10 +9,11 @@ export function print_grammar(grammar) {
     }
 }
 
-export function read_grammar(lines) {
+export function read_grammar(text) {
     const productions = {};
     // Saves all the productions in an object where the key is the non-terminal (head of the production)
     // and the value is a list with the bodies of the productions.
+    lines = text.split('\n');
     lines.forEach(line => {
         const production = line.trim();
         if (production === '') return;
