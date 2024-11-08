@@ -363,14 +363,14 @@ function syntax_analysis(string_grammar){
                 // Step 2: For each terminal a in FIRST(α), add A → α to M[A][a]
                 first_alpha.forEach(terminal => {
                     if (terminal !== '&') {  // Only add if terminal is not epsilon
-                        m_table[non_terminal][terminal] = `${non_terminal}→${production}`;
+                        m_table[non_terminal][terminal] = `${non_terminal}->${production}`;
                     }
                 });
     
                 // Step 3: If ε is in FIRST(α), add A → α to M[A][b] for each b in FOLLOW(A)
                 if (first_alpha.includes('&')) {
                     nexts[non_terminal].forEach(next => {
-                        m_table[non_terminal][next] = `${non_terminal}→${production}`;
+                        m_table[non_terminal][next] = `${non_terminal}->${production}`;
                     });
                 }
             });
@@ -388,13 +388,76 @@ function syntax_analysis(string_grammar){
     return {grammar, non_recursive, all_firsts, all_nexts, m_table}
 }
 
+function recognize_string(mTable, inputString) {
+    const startSymbol = Object.keys(mTable)[0];
+
+    // Initialize stack with $ at the bottom and the start symbol on top
+    const stack = ["$", startSymbol];
+    const input = inputString + "$"; // Append $ to input to mark end of input
+    let pointer = 0; // Pointer to track the position in the input string
+
+    const trace = []; // Array to store the stack and input states at each step
+
+    while (stack.length > 0) {
+        const top = stack[stack.length - 1]; // Peek the top of the stack
+        const currentInput = input[pointer]; // Current input symbol
+
+        // Store the current state of the stack and input
+        trace.push({
+            stack: stack.join(""),
+            input: input.slice(pointer),
+            action: ""
+        });
+
+        // If top of stack is a terminal or $, check for match
+        if (top === currentInput) {
+            if (top === "$") {
+                trace[trace.length - 1].action = "String is accepted by the grammar.";
+                return { result: true, trace }; // Return success with trace
+            }
+            // Terminal matches, so pop stack and advance input pointer
+            stack.pop();
+            pointer++;
+            trace[trace.length - 1].action = `Match ${currentInput}`;
+        } else if (mTable[top] && mTable[top][currentInput]) {
+            // If top is a non-terminal and we have a rule in M table
+            const production = mTable[top][currentInput];
+            console.log(production)
+            trace[trace.length - 1].action = `Apply ${production}`;
+
+            // Pop the non-terminal
+            stack.pop();
+
+            // Get the right side of the production and push to stack in reverse order
+            const rightSide = production.split("->")[1];
+            if (rightSide !== "&") { // Don't push epsilon
+                for (let i = rightSide.length - 1; i >= 0; i--) {
+                    stack.push(rightSide[i]);
+                }
+            }
+        } else {
+            // Error: No matching rule in M table for this non-terminal and terminal
+            trace[trace.length - 1].action = `Error: Unexpected symbol "${currentInput}" for non-terminal "${top}"`;
+            return { result: false, trace }; // Return failure with trace
+        }
+    }
+
+    // If stack is empty but input isn't fully parsed, it's an error
+    trace.push({
+        stack: stack.join(""),
+        input: input.slice(pointer),
+        action: "Error: Stack is empty but input is not fully parsed."
+    });
+    return { result: false, trace }; // Return failure with trace
+}
+
 // Testing the function
 const string_grammar = `E->E+T
 E->T
 T->T*F
 T->F
 F->(E)
-F->id`;
+F->i`;
 
 // Calling the function
 const {grammar, non_recursive, all_firsts, all_nexts, m_table} = syntax_analysis(string_grammar);
@@ -418,3 +481,7 @@ print_grammar(non_recursive)
 console.log(all_firsts)
 console.log(all_nexts)
 console.log(m_table)
+
+const {result, trace} = recognize_string(m_table, "i*i+i")
+console.log(result)
+console.log(trace)
