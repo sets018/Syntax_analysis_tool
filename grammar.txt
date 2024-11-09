@@ -1,4 +1,6 @@
-S->S,T
-S->T
-T->i
-T->i(S)
+E->E+T
+E->T
+T->T*F
+T->F
+F->(E)
+F->id
