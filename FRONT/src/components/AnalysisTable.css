@@ -1,0 +1,39 @@
+.table-container {
+    background-color: #2d2d2d;
+    color: #ffffff;
+    margin: 0 auto;
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .table-container h3 {
+    font-size: 1.25rem;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #333;
+  }
+  
+  thead th {
+    background-color: #444;
+    color: #ffffff;
+    padding: 8px;
+    border-bottom: 2px solid #555;
+  }
+  
+  tbody td {
+    padding: 8px;
+    text-align: center;
+    border-bottom: 1px solid #555;
+  }
+  
+  tbody tr:hover {
+    background-color: #3e3e3e;
+  }
+  

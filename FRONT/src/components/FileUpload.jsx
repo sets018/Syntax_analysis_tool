@@ -1,36 +1,29 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 function FileUpload({ onFileContent }) {
-  const [fileName, setFileName] = useState('');
-
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setFileName(file.name);
       const reader = new FileReader();
       reader.onload = (e) => {
         const content = e.target.result;
-        
-        console.log('Raw file content:', content); // Log raw content for debugging
-        onFileContent(content.split('\n')); // Pass the content as an array of lines
+        onFileContent(content);
       };
       reader.readAsText(file);
     }
   };
 
   return (
-    <div>
+    <div className="container">
       <input
         type="file"
-        accept=".txt"
+        id="file-upload"
         onChange={handleFileChange}
         style={{ display: 'none' }}
-        id="file-upload"
       />
       <label htmlFor="file-upload" className="upload-button">
-        Subir archivo
+        Upload File
       </label>
-      {fileName && <p>Archivo cargado: {fileName}</p>}
     </div>
   );
 }

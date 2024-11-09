@@ -1,102 +1,76 @@
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  overflow: hidden; /* Prevents overflow */
-}
-
-#root {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+body {
+  background-color: #1e1e1e;
+  color: #ffffff;
+  font-family: 'Arial', sans-serif;
 }
 
 .app-container {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background-color: #1b1b1d;
-  color: #fff;
-  padding: 10px;
-  border-radius: 15px;
-  height: 100%; /* Ensure the container takes full height */
+  margin: 0 auto;
+  padding: 20px;
 }
 
-.section, .table-container {
-  display: flex;
-  flex-direction: row;
-  width: fit-content;
-  align-items: center;
-  height: 500px;
-  background-color: #f8e4c1;
-  padding: 10px;
-  border-radius: 10px;
-  margin-bottom: 10px;
-  color: #000;
-  flex-basis: 15%; /* Adjust to fit content better */
-  max-height: 15%; /* Prevents sections from expanding too much */
+.title {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 2rem;
 }
 
-.flex-layout {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  flex-wrap: nowrap; /* Prevents items from wrapping */
+pre {
+  background-color: #333;
+  color: #ffffff;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
 }
 
-.column {
-  flex: 1;
-  min-width: 150px; /* Ensure columns don’t shrink too much */
+.response-title {
+  font-size: 1.5rem;
+  font-weight: bold;
   margin-bottom: 10px;
 }
 
-.input-box {
-  width: 100%;
-  border: 2px solid #f8e4c1;
-  border-radius: 10px;
-  padding: 5px;
-  font-size: 14px;
-  background-color: #24324a;
-  color: #f8e4c1;
-  margin-top: 5px;
+.response-container {
+  background-color: #1e1e1e; /* Light gray background */
+  color: #ffffff; /* Dark text */
+  padding: 20px;
+  border-radius: 5px;
+  text-align: left;
+  white-space: pre-wrap;
+  display: flex;
+  justify-content: space-around;
+
 }
 
 .upload-button {
-  background-color: #ff6600; /* Bright orange */
-  color: white;
+  display: inline-block;
   padding: 10px 20px;
+  margin: 20px;
+  background-color: #1a73e8; /* Custom button color */
+  color: #fff;
   border: none;
-  border-radius: 20px;
-  font-size: 16px;
+  border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s, box-shadow 0.3s;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  outline: none;
+  transition: background-color 0.3s;
 }
 
 .upload-button:hover {
-  background-color: #e05500; /* Slightly darker orange for hover effect */
-  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15); /* Enhanced shadow on hover */
+  background-color: #155ab3; /* Darker shade on hover */
 }
 
-.upload-button:focus {
-  outline: 2px solid #ff6600; /* Visible focus for accessibility */
+h1 {
+  margin-bottom: 20px;
+  text-align: center;
 }
 
-.upload-button:active {
-  background-color: #cc4a00; /* Darker color for active state */
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); /* Reduce shadow on click */
-}
-pre {
-  overflow-wrap: break-word; /* Ensures long lines break and stay within the container */
-  white-space: pre-wrap; /* Preserves whitespace but allows text to wrap */
-  margin: 0; /* Removes extra margins that may affect layout */
-  padding: 10px; /* Adds some padding for better readability */
-  max-width: 100%; /* Ensures the content doesn't exceed the width of the container */
-  box-sizing: border-box; /* Includes padding in the element's total width */
+h2 {
+  margin-bottom: 10px;
 }
 
+.container {
+  text-align: center;
+  padding: 0 50px 50px 50px;
+}
+.table-container {
+  display: flex;
+  height: fit-content;  
+} 
