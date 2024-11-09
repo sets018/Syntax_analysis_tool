@@ -7,7 +7,7 @@ function Firsts({ data }) {
       <ul>
         {Object.entries(data).map(([nonTerminal, firstSet]) => (
           <li key={nonTerminal}>
-            <strong>{nonTerminal}:</strong> {firstSet.join(', ')}
+            <strong>{nonTerminal}{'->'}</strong> {firstSet.join(', ')}
           </li>
         ))}
       </ul>

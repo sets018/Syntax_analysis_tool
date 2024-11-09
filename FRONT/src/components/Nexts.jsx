@@ -7,7 +7,7 @@ function Nexts({ data }) {
       <ul>
         {Object.entries(data).map(([nonTerminal, nextSet]) => (
           <li key={nonTerminal}>
-            <strong>{nonTerminal}:</strong> {nextSet.join(', ')}
+            <strong>{nonTerminal}{'->'}</strong> {nextSet.join(', ')}
           </li>
         ))}
       </ul>
