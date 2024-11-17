@@ -423,7 +423,7 @@ function recognize_string(mTable, inputString) {
             // If top is a non-terminal and we have a rule in M table
             const production = mTable[top][currentInput];
             // Check if production is defined
-            if (!production) {
+            if (production != "error") {
                 trace[trace.length - 1].action = `Error: No production rule found for "${top}" with input "${currentInput}"`;
                 return { result: false, trace }; // Return failure with trace
             }
@@ -456,16 +456,15 @@ function recognize_string(mTable, inputString) {
     return { result: false, trace }; // Return failure with trace
 }
 
-// Testing the function
-const string_grammar = `E->E+T
-E->T
-T->T*F
-T->F
-F->(E)
-F->i`;
-
-// Calling the function
-const {grammar, non_recursive, all_firsts, all_nexts, m_table} = syntax_analysis(string_grammar);
+function readFileContent(filePath) {
+    try {
+        const content = fs.readFileSync(filePath, 'utf8'); // Read the file synchronously
+        return content; // Return the content as a string
+    } catch (error) {
+        console.error('Error reading the file:', error.message);
+        return null;
+    }
+}
 
 // Function to test the other function
 function print_grammar(grammar){
@@ -479,14 +478,23 @@ function print_grammar(grammar){
     }
 }
 
-// Testing the outputs of the syntax analysis function 
-print_grammar(grammar)
-console.log("...............")
-print_grammar(non_recursive)
-console.log(all_firsts)
-console.log(all_nexts)
-console.log(m_table)
+// Testing the function
+tests = [1,3,6,7,8,9,10,11,12,13,14,15,16]
 
-const {result, trace} = recognize_string(m_table, "i*i+i")
-console.log(result)
-console.log(trace)
+for (const test of tests) {
+    const string_grammar = readFileContent(`/workspaces/Syntax_analysis_tool/tests/${test}.txt`);
+    console.log(`/workspaces/Syntax_analysis_tool/tests/${test}.txt`)
+    // Calling the function
+    const {grammar, non_recursive, all_firsts, all_nexts, m_table} = syntax_analysis(string_grammar);
+    // Testing the outputs of the syntax analysis function 
+    print_grammar(grammar)
+    console.log("...............")
+    print_grammar(non_recursive)
+    console.log(all_firsts)
+    console.log(all_nexts)
+    console.log(m_table)
+}
+
+//const {result, trace} = recognize_string(m_table, "i*i+i")
+//console.log(result)
+//console.log(trace)
