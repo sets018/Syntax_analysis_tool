@@ -1,0 +1,435 @@
+@sets018 ➜ /workspaces/Syntax_analysis_tool (main) $ node /workspaces/Syntax_analysis_tool/backend_functions.js
+/workspaces/Syntax_analysis_tool/tests/1.txt
+...grammar....
+S->Sa
+S->aAc
+S->c
+A->Ab
+A->ba
+...non_recursive factored...
+S->aAcB
+S->cB
+B->aB
+B->&
+A->baC
+C->bC
+C->&
+...firsts...
+{ S: [ 'a', 'c' ], B: [ 'a', '&' ], A: [ 'b' ], C: [ 'b', '&' ] }
+...nexts...
+{ S: [ '$' ], B: [ '$' ], A: [ 'c' ], C: [ 'c' ] }
+...m_table...
+{
+  S: { a: 'S->aAcB', c: 'S->cB', b: 'error', '$': 'error' },
+  B: { a: 'B->aB', c: 'error', b: 'error', '$': 'B->&' },
+  A: { a: 'error', c: 'error', b: 'A->baC', '$': 'error' },
+  C: { a: 'error', c: 'C->&', b: 'C->bC', '$': 'error' }
+}
+/workspaces/Syntax_analysis_tool/tests/3.txt
+...grammar....
+S->i{L}
+S->i
+L->L;S
+L->S
+...non_recursive factored...
+S->iA
+A->{L}
+A->&
+L->SB
+B->;SB
+B->&
+...firsts...
+{ S: [ 'i' ], A: [ '{', '&' ], L: [ 'i' ], B: [ ';', '&' ] }
+...nexts...
+{ S: [ '$', ';', '}' ], A: [ '$', ';', '}' ], L: [ '}' ], B: [ '}' ] }
+...m_table...
+{
+  S: {
+    i: 'S->iA',
+    '{': 'error',
+    '}': 'error',
+    ';': 'error',
+    '$': 'error'
+  },
+  A: { i: 'error', '{': 'A->{L}', '}': 'A->&', ';': 'A->&', '$': 'A->&' },
+  L: {
+    i: 'L->SB',
+    '{': 'error',
+    '}': 'error',
+    ';': 'error',
+    '$': 'error'
+  },
+  B: {
+    i: 'error',
+    '{': 'error',
+    '}': 'B->&',
+    ';': 'B->;SB',
+    '$': 'error'
+  }
+}
+/workspaces/Syntax_analysis_tool/tests/6.txt
+...grammar....
+E->A
+E->L
+A->n
+A->i
+L->(S)
+S->E,S
+S->E
+...non_recursive factored...
+E->A
+E->L
+A->n
+A->i
+L->(S)
+S->EB
+B->,S
+B->&
+...firsts...
+{
+  E: [ 'n', 'i', '(' ],
+  A: [ 'n', 'i' ],
+  L: [ '(' ],
+  S: [ 'n', 'i', '(' ],
+  B: [ ',', '&' ]
+}
+...nexts...
+{
+  E: [ '$', ',', ')' ],
+  A: [ '$', ',', ')' ],
+  L: [ '$', ',', ')' ],
+  S: [ ')' ],
+  B: [ ')' ]
+}
+...m_table...
+{
+  E: {
+    n: 'E->A',
+    i: 'E->A',
+    '(': 'E->L',
+    ')': 'error',
+    ',': 'error',
+    '$': 'error'
+  },
+  A: {
+    n: 'A->n',
+    i: 'A->i',
+    '(': 'error',
+    ')': 'error',
+    ',': 'error',
+    '$': 'error'
+  },
+  L: {
+    n: 'error',
+    i: 'error',
+    '(': 'L->(S)',
+    ')': 'error',
+    ',': 'error',
+    '$': 'error'
+  },
+  S: {
+    n: 'S->EB',
+    i: 'S->EB',
+    '(': 'S->EB',
+    ')': 'error',
+    ',': 'error',
+    '$': 'error'
+  },
+  B: {
+    n: 'error',
+    i: 'error',
+    '(': 'error',
+    ')': 'B->&',
+    ',': 'B->,S',
+    '$': 'error'
+  }
+}
+/workspaces/Syntax_analysis_tool/tests/7.txt
+...grammar....
+E->(L)
+E->a
+L->EL
+L->E
+...non_recursive factored...
+E->(L)
+E->a
+L->EA
+A->L
+A->&
+...firsts...
+{ E: [ '(', 'a' ], L: [ '(', 'a' ], A: [ '(', 'a', '&' ] }
+...nexts...
+{ E: [ '$', '(', 'a', ')' ], L: [ ')' ], A: [ ')' ] }
+...m_table...
+{
+  E: { '(': 'E->(L)', ')': 'error', a: 'E->a', '$': 'error' },
+  L: { '(': 'L->EA', ')': 'error', a: 'L->EA', '$': 'error' },
+  A: { '(': 'A->L', ')': 'A->&', a: 'A->L', '$': 'error' }
+}
+/workspaces/Syntax_analysis_tool/tests/8.txt
+...grammar....
+S->aSdd
+S->T
+T->bTc
+T->&
+...non_recursive factored...
+S->aSdd
+S->T
+T->bTc
+T->&
+...firsts...
+{ S: [ 'a', 'b', '&' ], T: [ 'b', '&' ] }
+...nexts...
+{ S: [ '$', 'd' ], T: [ '$', 'd', 'c' ] }
+...m_table...
+{
+  S: { a: 'S->aSdd', d: 'S->T', b: 'S->T', c: 'error', '$': 'S->T' },
+  T: { a: 'error', d: 'T->&', b: 'T->bTc', c: 'T->&', '$': 'T->&' }
+}
+/workspaces/Syntax_analysis_tool/tests/9.txt
+...grammar....
+S->aSa
+S->aTa
+T->bbbT
+T->bbb
+...non_recursive factored...
+S->aA
+A->Sa
+A->Ta
+T->bbbB
+B->T
+B->&
+...firsts...
+{ S: [ 'a' ], A: [ 'a', 'b' ], T: [ 'b' ], B: [ 'b', '&' ] }
+...nexts...
+{ S: [ '$', 'a' ], A: [ '$', 'a' ], T: [ 'a' ], B: [ 'a' ] }
+...m_table...
+{
+  S: { a: 'S->aA', b: 'error', '$': 'error' },
+  A: { a: 'A->Sa', b: 'A->Ta', '$': 'error' },
+  T: { a: 'error', b: 'T->bbbB', '$': 'error' },
+  B: { a: 'B->&', b: 'B->T', '$': 'error' }
+}
+/workspaces/Syntax_analysis_tool/tests/10.txt
+...grammar....
+A->abc
+A->abcdS
+A->abD
+A->abE
+A->abC
+A->yhui
+A->yhcd
+...non_recursive factored...
+A->abc
+A->abcdS
+A->abD
+A->abE
+A->abC
+A->yhui
+A->yhcd
+...firsts...
+{ A: [ 'a', 'y' ] }
+...nexts...
+{ A: [ '$' ] }
+...m_table...
+{
+  A: {
+    a: 'A->abC',
+    b: 'error',
+    c: 'error',
+    d: 'error',
+    y: 'A->yhcd',
+    h: 'error',
+    u: 'error',
+    i: 'error',
+    '$': 'error'
+  }
+}
+/workspaces/Syntax_analysis_tool/tests/11.txt
+...grammar....
+A->BCDE
+B->b
+B->&
+C->c
+C->&
+D->d
+D->&
+E->e
+E->&
+...non_recursive factored...
+A->BCDE
+B->b
+B->&
+C->c
+C->&
+D->d
+D->&
+E->e
+E->&
+...firsts...
+{
+  A: [ 'b', 'c', 'd', 'e', '&' ],
+  B: [ 'b', '&' ],
+  C: [ 'c', '&' ],
+  D: [ 'd', '&' ],
+  E: [ 'e', '&' ]
+}
+...nexts...
+{
+  A: [ '$' ],
+  B: [ 'c', '$' ],
+  C: [ 'd', '$' ],
+  D: [ 'e', '$' ],
+  E: [ '$' ]
+}
+...m_table...
+{
+  A: {
+    b: 'A->BCDE',
+    c: 'A->BCDE',
+    d: 'A->BCDE',
+    e: 'A->BCDE',
+    '$': 'A->BCDE'
+  },
+  B: { b: 'B->b', c: 'B->&', d: 'error', e: 'error', '$': 'B->&' },
+  C: { b: 'error', c: 'C->c', d: 'C->&', e: 'error', '$': 'C->&' },
+  D: { b: 'error', c: 'error', d: 'D->d', e: 'D->&', '$': 'D->&' },
+  E: { b: 'error', c: 'error', d: 'error', e: 'E->e', '$': 'E->&' }
+}
+/workspaces/Syntax_analysis_tool/tests/12.txt
+...grammar....
+P->iEtP
+P->iEtPeP
+P->a
+E->b
+...non_recursive factored...
+P->iEtP
+P->iEtPeP
+P->a
+E->b
+...firsts...
+{ P: [ 'i', 'a' ], E: [ 'b' ] }
+...nexts...
+{ P: [ '$', 'e' ], E: [ 't' ] }
+...m_table...
+{
+  P: {
+    i: 'P->iEtPeP',
+    t: 'error',
+    e: 'error',
+    a: 'P->a',
+    b: 'error',
+    '$': 'error'
+  },
+  E: {
+    i: 'error',
+    t: 'error',
+    e: 'error',
+    a: 'error',
+    b: 'E->b',
+    '$': 'error'
+  }
+}
+/workspaces/Syntax_analysis_tool/tests/13.txt
+...grammar....
+P->iEtP
+P->iEtPeP
+P->Za
+E->b
+...non_recursive factored...
+P->iEtP
+P->iEtPeP
+P->Za
+E->b
+...firsts...
+{ P: [ 'i', 'Z' ], E: [ 'b' ] }
+...nexts...
+{ P: [ '$', 'e' ], E: [ 't' ] }
+...m_table...
+{
+  P: {
+    i: 'P->iEtPeP',
+    t: 'error',
+    e: 'error',
+    a: 'error',
+    b: 'error',
+    '$': 'error',
+    Z: 'P->Za'
+  },
+  E: {
+    i: 'error',
+    t: 'error',
+    e: 'error',
+    a: 'error',
+    b: 'E->b',
+    '$': 'error'
+  }
+}
+/workspaces/Syntax_analysis_tool/tests/14.txt
+...grammar....
+S->S + S
+S->S * S
+S->a
+...non_recursive factored...
+S->aA
+A->+ SA
+A->* SA
+A->&
+...firsts...
+{ S: [ 'a' ], A: [ '+', '*', '&' ] }
+...nexts...
+{ S: [ '$', '+', '*' ], A: [ '$', '+', '*' ] }
+...m_table...
+{
+  S: {
+    a: 'S->aA',
+    '+': 'error',
+    ' ': 'error',
+    '*': 'error',
+    '$': 'error'
+  },
+  A: { a: 'error', '+': 'A->&', ' ': 'error', '*': 'A->&', '$': 'A->&' }
+}
+/workspaces/Syntax_analysis_tool/tests/15.txt
+...grammar....
+S->S + S
+S->a
+...non_recursive factored...
+S->aA
+A->+ SA
+A->&
+...firsts...
+{ S: [ 'a' ], A: [ '+', '&' ] }
+...nexts...
+{ S: [ '$', '+' ], A: [ '$', '+' ] }
+...m_table...
+{
+  S: { a: 'S->aA', '+': 'error', ' ': 'error', '$': 'error' },
+  A: { a: 'error', '+': 'A->&', ' ': 'error', '$': 'A->&' }
+}
+/workspaces/Syntax_analysis_tool/tests/16.txt
+...grammar....
+S->AB
+S->AC
+A->a
+B->b
+C->b
+...non_recursive factored...
+S->AD
+D->B
+D->C
+A->a
+B->b
+C->b
+...firsts...
+{ S: [ 'a' ], D: [ 'b' ], A: [ 'a' ], B: [ 'b' ], C: [ 'b' ] }
+...nexts...
+{ S: [ '$' ], D: [ '$' ], A: [ 'b' ], B: [ '$' ], C: [ '$' ] }
+...m_table...
+{
+  S: { a: 'S->AD', b: 'error', '$': 'error' },
+  D: { a: 'error', b: 'D->C', '$': 'error' },
+  A: { a: 'A->a', b: 'error', '$': 'error' },
+  B: { a: 'error', b: 'B->b', '$': 'error' },
+  C: { a: 'error', b: 'C->b', '$': 'error' }
+}
