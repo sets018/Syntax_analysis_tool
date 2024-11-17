@@ -1,0 +1,4 @@
+S->aSa
+S->aTa
+T->bbbT
+T->bbb

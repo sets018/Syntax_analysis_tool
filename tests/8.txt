@@ -1,0 +1,4 @@
+S->aSdd
+S->T
+T->bTc
+T->&

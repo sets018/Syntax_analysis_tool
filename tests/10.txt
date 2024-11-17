@@ -1,0 +1,7 @@
+A->abc
+A->abcdS
+A->abD
+A->abE
+A->abC
+A->yhui
+A->yhcd
