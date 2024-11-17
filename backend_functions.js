@@ -487,11 +487,15 @@ for (const test of tests) {
     // Calling the function
     const {grammar, non_recursive, all_firsts, all_nexts, m_table} = syntax_analysis(string_grammar);
     // Testing the outputs of the syntax analysis function 
+    console.log("...grammar....")
     print_grammar(grammar)
-    console.log("...............")
+    console.log("...non_recursive factored...")
     print_grammar(non_recursive)
+    console.log("...firsts...")
     console.log(all_firsts)
+    console.log("...nexts...")
     console.log(all_nexts)
+    console.log("...m_table...")
     console.log(m_table)
 }
 
